@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Get Up and Walk Reminder</title>
+<meta name="description" content="This hour's steps on your Wear OS watch face, and a buzz at :50 if you're short of 250. Beta testers get lifetime access free.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Get Up and Walk Reminder">
+<meta property="og:description" content="Walk 250 steps every hour. The count sits on your Wear OS watch face, and the watch buzzes at :50 if you're short. Beta testers get lifetime access free.">
+<meta property="og:url" content="https://puru2901is.github.io/get-up-and-walk/">
+<!-- Full URL on purpose: some sites ignore a relative preview image -->
+<meta property="og:image" content="https://puru2901is.github.io/get-up-and-walk/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Walk 250 steps every hour: a watch at 10:50 showing 182 of 250 steps and the reminder Move! 68 to go">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#EEF1F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1020" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Unbounded:wght@500;600&display=swap">
+<style>
+/* Layout: left-aligned hero with a live watch on the right; sections on a 1080px column; one column below 860px */
+:root {
+  --paper: #EEF1F6;
+  --surface: #FFFFFF;
+  --ink: #141A2B;
+  --muted: #586078;
+  --line: #D5DAE5;
+  --ring: #3365D4;
+  --heart: #D7384A;
+  --on-accent: #FFFFFF;
+  --tint: #E3EAFA;
+  --warn-bg: #FFF3C4;
+  --warn-fg: #4D3B00;
+  --strap: #C6CDDA;
+  --case: #2A2F3F;
+  --face: #05060A;
+  --face-track: #1C2234;
+  --face-surface: #151A2D;
+  --face-ring: #6E9BF0;
+  --face-text: #EEF1F8;
+  --face-muted: #8F98AE;
+  --face-heart: #FF6B72;
+  --face-on-heart: #1A0507;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0D1020;
+    --surface: #151A2D;
+    --ink: #E7EBF5;
+    --muted: #9AA3B9;
+    --line: #272E46;
+    --ring: #7EA4F6;
+    --heart: #FF7C86;
+    --on-accent: #0B0E1C;
+    --tint: #1C2440;
+    --warn-bg: #3A3008;
+    --warn-fg: #FFE58A;
+    --strap: #252B41;
+    --case: #3B4258;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 17px/1.55 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+img, svg { max-width: 100%; }
+a { color: var(--ring); }
+:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; border-radius: 6px; }
+
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+
+.devnote {
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  font: 500 14px/1.4 var(--body);
+}
+.devnote .wrap { padding-block: 10px; }
+.devnote code { font-family: var(--mono); font-size: 13px; }
+
+/* Header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; color: var(--ink); text-decoration: none; }
+.brand svg { width: 30px; height: 30px; flex: none; }
+.top-link {
+  font-weight: 600; font-size: 15px; color: var(--ink); text-decoration: none;
+  border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 16px; white-space: nowrap;
+}
+.top-link:hover { border-color: var(--ring); }
+
+/* Type */
+h1, h2 { font-family: var(--display); font-weight: 500; letter-spacing: -0.015em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(32px, 5vw, 54px); line-height: 1.08; }
+h2 { font-size: clamp(25px, 3.2vw, 34px); line-height: 1.15; }
+h3 { font-size: 18px; line-height: 1.3; margin: 0; font-weight: 600; }
+p { margin: 0; }
+.eyebrow {
+  font: 500 13px/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+}
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.accent { color: var(--ring); }
+
+/* Hero */
+.hero {
+  display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 48px; align-items: center;
+  padding-block: 32px 72px;
+}
+.hero-copy { display: grid; gap: 22px; min-width: 0; }
+.lede { font-size: 19px; color: var(--muted); max-width: 33em; }
+.lede strong { color: var(--ink); font-weight: 600; }
+.cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: 600 17px/1 var(--body); color: var(--on-accent); background: var(--ring);
+  border: 0; border-radius: 999px; padding: 16px 26px; text-decoration: none; cursor: pointer;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn[disabled] { opacity: 0.6; cursor: progress; }
+.cta-note { font-size: 15px; color: var(--muted); }
+.cta-note b { color: var(--ink); font-weight: 600; }
+
+.watch { margin: 0; justify-self: center; width: min(100%, 330px); position: relative; }
+.watch-body { transform-origin: 50% 50%; }
+.watch-body.buzz { animation: buzz 0.13s linear infinite; }
+@keyframes buzz {
+  0% { transform: translate(0, 0) rotate(0); }
+  25% { transform: translate(-2.5px, 0) rotate(-0.8deg); }
+  75% { transform: translate(2.5px, 0) rotate(0.8deg); }
+  100% { transform: translate(0, 0) rotate(0); }
+}
+.watch .buzz-marks { opacity: 0; transition: opacity 0.2s; }
+.watch .buzz-marks.on { opacity: 1; }
+.watch figcaption { text-align: center; font-size: 14px; color: var(--muted); margin-top: 10px; }
+.w-heart { transform-box: fill-box; transform-origin: center; transition: transform 0.35s cubic-bezier(.3,1.6,.5,1), opacity 0.2s; }
+.w-heart.off { transform: scale(0.2); opacity: 0; }
+
+/* Sections */
+section { padding-block: 72px; }
+.section-head { display: grid; gap: 12px; max-width: 40em; margin-bottom: 36px; }
+.section-head p { color: var(--muted); font-size: 18px; }
+.rule { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+/* Compare */
+.compare { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.compare > div { display: grid; align-content: start; gap: 10px; padding: 22px 4px 0; border-top: 2px solid var(--line); min-width: 0; }
+.compare > div.ours { background: var(--surface); border: 1.5px solid var(--ring); border-radius: 18px; padding: 22px; }
+.compare p { color: var(--muted); }
+.compare .ours p { color: var(--ink); }
+
+/* Hour chart */
+.chart-scroll { overflow-x: auto; margin: 0 -4px; padding: 0 4px 6px; }
+.chart-scroll svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.chart-axis { font: 500 13px var(--mono); fill: var(--muted); }
+.chart-label { font: 600 14px var(--body); fill: var(--ink); }
+.chart-label.muted { fill: var(--muted); font-weight: 500; }
+.timeline { list-style: none; margin: 32px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+.timeline li { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.timeline .when { font: 700 15px var(--mono); color: var(--ring); }
+.timeline .when.alert { color: var(--heart); }
+.timeline p { color: var(--muted); font-size: 16px; }
+
+/* Settings */
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; }
+.facts > div { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.facts .big { font: 700 26px/1.1 var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); letter-spacing: -0.02em; }
+.facts p { color: var(--muted); font-size: 16px; }
+
+/* Join */
+.join { background: var(--surface); border-block: 1px solid var(--line); }
+.join-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 56px; align-items: start; }
+.join-intro { display: grid; gap: 16px; }
+.join-intro p { color: var(--muted); font-size: 18px; }
+.includes { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 10px; }
+.includes li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
+.includes svg { width: 18px; height: 18px; margin-top: 4px; }
+
+form { display: grid; gap: 22px; }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+legend, .field-label { font-weight: 600; font-size: 15px; margin-bottom: 10px; padding: 0; }
+.optional { font-weight: 400; color: var(--muted); }
+.tracks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.track { position: relative; min-width: 0; }
+.track input { position: absolute; opacity: 0; inset: 0; margin: 0; pointer-events: none; }
+.track label {
+  display: grid; gap: 6px; height: 100%; padding: 16px 16px 18px; cursor: pointer;
+  border: 1.5px solid var(--line); border-radius: 16px; background: var(--paper);
+}
+.track label:hover { border-color: var(--muted); }
+.track input:checked + label { border-color: var(--ring); background: var(--tint); }
+.track input:focus-visible + label { outline: 3px solid var(--ring); outline-offset: 2px; }
+.track input:disabled + label { opacity: 0.45; cursor: not-allowed; }
+.track .t-name { font-weight: 600; font-size: 17px; }
+.track .t-price { font: 700 15px var(--mono); color: var(--ring); }
+.track .t-desc { font-size: 14.5px; color: var(--muted); line-height: 1.45; }
+
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field .field-label { margin: 0; }
+.hint { font-size: 13.5px; color: var(--muted); line-height: 1.4; }
+input[type="email"], select {
+  width: 100%; font: 400 16px/1.3 var(--body); color: var(--ink); background: var(--paper);
+  border: 1.5px solid var(--line); border-radius: 12px; padding: 13px 14px; min-height: 50px;
+}
+input[type="email"]:focus, select:focus { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px var(--tint); }
+.watch-note { font-size: 14px; color: var(--heart); }
+
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { position: relative; }
+.pill input { position: absolute; opacity: 0; inset: 0; margin: 0; pointer-events: none; }
+.pill label {
+  display: inline-block; cursor: pointer; padding: 9px 16px; border-radius: 999px;
+  border: 1.5px solid var(--line); font: 600 15px var(--mono); font-variant-numeric: tabular-nums; background: var(--paper);
+}
+.pill input:checked + label { border-color: var(--ring); background: var(--tint); color: var(--ink); }
+.pill input:focus-visible + label { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.submit-row { display: grid; gap: 12px; }
+.submit-row .btn { width: 100%; }
+.fine { font-size: 13.5px; color: var(--muted); line-height: 1.45; }
+.form-error { color: var(--heart); font-weight: 600; font-size: 15px; }
+
+.done { display: grid; gap: 14px; padding: 28px; border: 1.5px solid var(--ring); border-radius: 18px; background: var(--tint); }
+.done h3 { font-family: var(--display); font-weight: 500; font-size: 24px; }
+.done p { color: var(--ink); }
+.share { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 6px; }
+.share code { font: 500 14px var(--mono); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; overflow-wrap: anywhere; user-select: all; }
+.btn-ghost { font: 600 15px var(--body); color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px; padding: 9px 16px; cursor: pointer; }
+.btn-ghost:hover { border-color: var(--ring); }
+
+/* FAQ */
+.faq { display: grid; max-width: 760px; }
+.faq details { border-bottom: 1px solid var(--line); }
+.faq summary {
+  cursor: pointer; list-style: none; padding: 18px 36px 18px 0; position: relative; font-weight: 600; font-size: 18px;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: "+"; position: absolute; right: 4px; top: 14px; font: 500 24px var(--mono); color: var(--ring);
+}
+.faq details[open] summary::after { content: "−"; }
+.faq details p { color: var(--muted); padding: 0 0 20px; max-width: 42em; }
+
+footer { padding-block: 40px 56px; color: var(--muted); font-size: 14px; }
+footer .wrap { display: grid; gap: 10px; }
+footer p { max-width: 60em; }
+
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; gap: 36px; padding-block: 16px 56px; }
+  .watch { width: min(100%, 290px); }
+  .compare { grid-template-columns: 1fr; }
+  .timeline { grid-template-columns: 1fr 1fr; }
+  .facts { grid-template-columns: 1fr 1fr; }
+  .join-grid { grid-template-columns: 1fr; gap: 32px; }
+  section { padding-block: 56px; }
+}
+@media (max-width: 520px) {
+  body { font-size: 16px; }
+  .lede { font-size: 17.5px; }
+  .tracks, .fields { grid-template-columns: 1fr; }
+  .timeline, .facts { grid-template-columns: 1fr; gap: 20px; }
+  .top-link { padding: 7px 12px; font-size: 14px; }
+  .brand span { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .watch-body.buzz { animation: none; }
+  .w-heart { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="devnote" id="devnote" hidden>
+  <div class="wrap">Preview mode: signups are not saved yet. Put your Apps Script web app URL in <code>CONFIG.signupEndpoint</code> at the bottom of this file.</div>
+</div>
+
+<header class="wrap top">
+  <a class="brand" href="#">
+    <svg viewBox="19 15 70 70" aria-hidden="true">
+      <path d="M50.5 17h7a2.5 2.5 0 0 1 0 5h-7a2.5 2.5 0 0 1 0-5zM52 21h4v6h-4z" fill="var(--ring)"/>
+      <rect x="73" y="26" width="5" height="7" rx="2" fill="var(--ring)" transform="rotate(45 75.5 29.5)"/>
+      <circle cx="54" cy="56" r="24" fill="none" stroke="var(--line)" stroke-width="7"/>
+      <path d="M54 32a24 24 0 1 1-24 24" fill="none" stroke="var(--ring)" stroke-width="7" stroke-linecap="round"/>
+      <g fill="var(--heart)">
+        <g transform="rotate(-14 47.5 60)"><ellipse cx="47.5" cy="56" rx="4.3" ry="6.2"/><ellipse cx="47.5" cy="66.2" rx="3.4" ry="3.3"/></g>
+        <g transform="rotate(14 60.5 52)"><ellipse cx="60.5" cy="48" rx="4.3" ry="6.2"/><ellipse cx="60.5" cy="58.2" rx="3.4" ry="3.3"/></g>
+      </g>
+    </svg>
+    <span>Get Up and Walk Reminder</span>
+  </a>
+  <a class="top-link" href="#join">Join the beta</a>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div class="hero-copy">
+      <p class="eyebrow">For Wear OS · Galaxy Watch · Pixel Watch</p>
+      <h1>Walk <span class="accent">250</span> steps every hour.</h1>
+      <p class="lede">This hour's step count sits on your watch face, next to the time. <strong>At ten to the hour, if you're short, your watch buzzes</strong> and tells you how many steps are left. You still have ten minutes to make it.</p>
+      <div class="cta-row">
+        <a class="btn" href="#join">Get lifetime access</a>
+        <p class="cta-note">Beta testers: <b>free for life</b>.<br>Waitlist: <b><span data-price>$4.99</span> once</b> at launch.</p>
+      </div>
+    </div>
+
+    <figure class="watch" aria-label="A watch at 10:50 showing 182 of 250 steps this hour, with a reminder: Move! 68 to go">
+      <div class="watch-body" id="watchBody">
+        <svg viewBox="-28 0 376 470" aria-hidden="true">
+          <rect x="94" y="0" width="132" height="110" rx="20" fill="var(--strap)"/>
+          <rect x="94" y="360" width="132" height="110" rx="20" fill="var(--strap)"/>
+          <rect x="300" y="214" width="12" height="42" rx="5" fill="var(--case)"/>
+          <circle cx="160" cy="235" r="150" fill="var(--case)"/>
+          <circle cx="160" cy="235" r="140" fill="var(--face)"/>
+          <circle cx="160" cy="235" r="112" fill="none" stroke="var(--face-track)" stroke-width="16"/>
+          <circle id="wRing" cx="160" cy="235" r="112" fill="none" stroke="var(--face-ring)" stroke-width="16" stroke-linecap="round"
+                  pathLength="250" stroke-dasharray="182 1000" transform="rotate(-90 160 235)"/>
+          <text id="wTime" x="160" y="158" text-anchor="middle" fill="var(--face-muted)" style="font: 700 19px var(--mono)">10:50</text>
+          <path id="wHeart" class="w-heart off" d="M160 196c-6.2-4.6-10-8.1-10-12.3 0-2.9 2.3-5.2 5-5.2 1.9 0 3.8 1 5 2.7 1.2-1.7 3.1-2.7 5-2.7 2.7 0 5 2.3 5 5.2 0 4.2-3.8 7.7-10 12.3z" fill="var(--face-heart)"/>
+          <text id="wSteps" x="160" y="250" text-anchor="middle" fill="var(--face-text)" style="font: 600 60px var(--display); font-variant-numeric: tabular-nums; letter-spacing: -1px">182</text>
+          <text x="160" y="276" text-anchor="middle" fill="var(--face-muted)" style="font: 500 15px var(--body)">of 250 this hour</text>
+          <!-- Status pill, as in the app: "N to go" during the hour, "Move! N to go" from :50, "Hour won · 4 of 5" -->
+          <rect id="wPill" x="94" y="287" width="132" height="34" rx="17" fill="var(--face-heart)"/>
+          <text id="wPillText" x="160" y="309" text-anchor="middle" fill="var(--face-on-heart)" style="font: 700 14px var(--body)">Move! 68 to go</text>
+        </svg>
+      </div>
+      <svg class="buzz-marks on" id="buzzMarks" viewBox="-28 0 376 470" aria-hidden="true" style="position:absolute; inset:0 0 auto 0; width:100%; pointer-events:none">
+        <path d="M-2 192 q-10 43 0 86 M-14 177 q-14 58 0 116" fill="none" stroke="var(--heart)" stroke-width="4" stroke-linecap="round"/>
+        <path d="M322 192 q10 43 0 86 M334 177 q14 58 0 116" fill="none" stroke="var(--heart)" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <figcaption>10:50 and 68 steps short: the watch buzzes.</figcaption>
+    </figure>
+  </div>
+
+  <div class="wrap"><hr class="rule"></div>
+
+  <section aria-labelledby="today-h">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">What your watch does today</p>
+        <h2 id="today-h">Sitting alerts and hourly goals exist. You just can't see them where you look.</h2>
+      </div>
+      <div class="compare">
+        <div>
+          <h3>Galaxy Watch, built in</h3>
+          <p>An inactivity alert after 50 minutes of sitting. The timer is fixed, and there's no step goal to hit.</p>
+        </div>
+        <div>
+          <h3>Pixel Watch, built in</h3>
+          <p>Fitbit tracks 250 steps an hour, inside its app and tile. Your watch face doesn't show how far along you are.</p>
+        </div>
+        <div class="ours">
+          <h3>With Get Up and Walk Reminder</h3>
+          <p>This hour's count is a ring on your watch face. You pick the goal and the hours, and the buzz at :50 comes only when you're short.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="hour-h" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">One hour, start to finish</p>
+        <h2 id="hour-h">How an hour works</h2>
+        <p>A desk morning, 10:00 to 11:00. A few short walks get you to 182 steps by 10:50, so the watch buzzes. A walk to the kitchen finishes the hour.</p>
+      </div>
+
+      <div class="chart-scroll">
+        <svg viewBox="0 0 640 224" role="img" aria-label="Steps between 10:00 and 11:00: 46 by 10:14, 118 by 10:30, 182 by 10:46. At the 10:50 check the count is 182 of 250, so the watch buzzes. The goal of 250 is reached at 10:56.">
+          <line x1="48" y1="180" x2="616" y2="180" stroke="var(--line)" stroke-width="1.5"/>
+          <line x1="48" y1="55" x2="616" y2="55" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 5"/>
+          <text class="chart-label muted" x="52" y="46">goal 250</text>
+          <g stroke="var(--line)" stroke-width="1">
+            <line x1="48" y1="180" x2="48" y2="186"/><line x1="142.7" y1="180" x2="142.7" y2="186"/><line x1="237.3" y1="180" x2="237.3" y2="186"/>
+            <line x1="332" y1="180" x2="332" y2="186"/><line x1="426.7" y1="180" x2="426.7" y2="186"/><line x1="616" y1="180" x2="616" y2="186"/>
+          </g>
+          <g class="chart-axis" text-anchor="middle">
+            <text x="48" y="206">10:00</text><text x="142.7" y="206">10:10</text><text x="237.3" y="206">10:20</text>
+            <text x="332" y="206">10:30</text><text x="426.7" y="206">10:40</text><text x="521.3" y="206" fill="var(--heart)">10:50</text><text x="608" y="206">11:00</text>
+          </g>
+          <polygon points="48,180 161.6,180 180.5,157 303.6,157 332,121 464.5,121 483.5,89 521.3,89 521.3,180" fill="var(--ring)" opacity="0.14"/>
+          <polygon points="521.3,180 521.3,89 540.3,89 578.1,55 616,49 616,180" fill="var(--heart)" opacity="0.14"/>
+          <polyline points="48,180 161.6,180 180.5,157 303.6,157 332,121 464.5,121 483.5,89 521.3,89" fill="none" stroke="var(--ring)" stroke-width="3" stroke-linejoin="round"/>
+          <polyline points="521.3,89 540.3,89 578.1,55 616,49" fill="none" stroke="var(--heart)" stroke-width="3" stroke-linejoin="round"/>
+          <line x1="521.3" y1="24" x2="521.3" y2="186" stroke="var(--heart)" stroke-width="1.5" stroke-dasharray="3 4"/>
+          <text class="chart-label" x="513" y="20" text-anchor="end" fill="var(--heart)" style="fill:var(--heart)">check at :50</text>
+          <circle cx="521.3" cy="89" r="5.5" fill="var(--heart)"/>
+          <text class="chart-label" x="512" y="146" text-anchor="end">182 of 250: buzz</text>
+          <circle cx="578.1" cy="55" r="5.5" fill="var(--ring)"/>
+          <text class="chart-label" x="612" y="124" text-anchor="end">250 at :56</text>
+        </svg>
+      </div>
+
+      <ol class="timeline">
+        <li><span class="when">10:00</span><h3>The count starts at zero</h3><p>Every hour is a fresh goal, so a lazy morning doesn't follow you all day.</p></li>
+        <li><span class="when">10:00–10:50</span><h3>Walk whenever it suits you</h3><p>The ring fills as you move. Glance at the time and you see it.</p></li>
+        <li><span class="when alert">10:50</span><h3>Short? The watch buzzes</h3><p>It shows the steps left. Already at 250? It stays quiet.</p></li>
+        <li><span class="when">Goal reached</span><h3>The heart lights up</h3><p>The buzz stops and the hour counts toward today's total, like ❤ 4/5.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section aria-labelledby="yours-h" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Settings</p>
+        <h2 id="yours-h">Your goal, your hours</h2>
+      </div>
+      <div class="facts">
+        <div><span class="big">250</span><h3>Step goal</h3><p>Change it in steps of 50, right on the watch.</p></div>
+        <div><span class="big">08–21</span><h3>Active hours</h3><p>Pick when the hourly goal counts. No reminders outside those hours.</p></div>
+        <div><span class="big">:50</span><h3>Reminder</h3><p>Only when you're short. Its sound stays off in Do Not Disturb and Bedtime. Turn it off any time.</p></div>
+        <div><span class="big">0 KB</span><h3>Sent anywhere</h3><p>No account. Your steps are counted and kept on the watch.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="join" id="join" aria-labelledby="join-h">
+    <div class="wrap join-grid">
+      <div class="join-intro">
+        <p class="eyebrow">Founding members</p>
+        <h2 id="join-h">Get in now, pay once or not at all</h2>
+        <p>The app is in testing on Galaxy Watch and Pixel Watch. Beta testers keep it free for life. Everyone on the waitlist gets the founding price at launch.</p>
+        <ul class="includes">
+          <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="var(--ring)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Every future version and feature, no subscription</span></li>
+          <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="var(--ring)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>The hourly ring for any watch face that takes a complication</span></li>
+          <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="var(--ring)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>A say in what gets built next</span></li>
+        </ul>
+      </div>
+
+      <div>
+        <form id="signupForm" novalidate>
+          <fieldset>
+            <legend>How do you want in?</legend>
+            <div class="tracks">
+              <div class="track">
+                <input type="radio" name="track" id="track-beta" value="beta" checked>
+                <label for="track-beta">
+                  <span class="t-name">Beta tester</span>
+                  <span class="t-price">Free for life</span>
+                  <span class="t-desc">Get the Google Play test link by email when testing opens, then tell us when the reminder gets it wrong.</span>
+                </label>
+              </div>
+              <div class="track">
+                <input type="radio" name="track" id="track-wait" value="waitlist">
+                <label for="track-wait">
+                  <span class="t-name">Waitlist</span>
+                  <span class="t-price"><span data-price>$4.99</span> once</span>
+                  <span class="t-desc">One email at launch with the founding lifetime price.</span>
+                </label>
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="fields">
+            <div class="field">
+              <label class="field-label" for="email">Email</label>
+              <input type="email" id="email" name="email" autocomplete="email" required maxlength="254" placeholder="you@gmail.com">
+              <span class="hint" id="emailHint">Beta testers: use the Google account you sign in to Google Play with.</span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="watch">Your watch</label>
+              <select id="watch" name="watch" required>
+                <option value="" selected disabled>Choose your watch</option>
+                <optgroup label="Galaxy Watch">
+                  <option>Galaxy Watch8 / Watch8 Classic</option>
+                  <option>Galaxy Watch Ultra</option>
+                  <option>Galaxy Watch7</option>
+                  <option>Galaxy Watch6 / Watch6 Classic</option>
+                  <option>Galaxy Watch5 / Watch5 Pro</option>
+                  <option>Galaxy Watch4 / Watch4 Classic</option>
+                </optgroup>
+                <optgroup label="Pixel Watch">
+                  <option>Pixel Watch 4</option>
+                  <option>Pixel Watch 3</option>
+                  <option>Pixel Watch 2</option>
+                  <option>Pixel Watch (first)</option>
+                </optgroup>
+                <optgroup label="Other Wear OS">
+                  <option>OnePlus Watch</option>
+                  <option>TicWatch</option>
+                  <option>Other Wear OS watch</option>
+                </optgroup>
+                <optgroup label="Not Wear OS">
+                  <option data-wear="0">Apple Watch</option>
+                  <option data-wear="0">Fitbit (Versa, Sense, Charge, Inspire)</option>
+                  <option data-wear="0">Garmin</option>
+                  <option data-wear="0">Other or no watch</option>
+                </optgroup>
+              </select>
+              <span class="watch-note" id="watchNote" hidden>This watch can't run the app yet. Join the waitlist and we'll count you in.</span>
+            </div>
+          </div>
+
+          <fieldset>
+            <legend>What would you pay once for lifetime access? <span class="optional">(optional)</span></legend>
+            <div class="pills">
+              <div class="pill"><input type="radio" name="price" id="p1" value="$2.99"><label for="p1">$2.99</label></div>
+              <div class="pill"><input type="radio" name="price" id="p2" value="$4.99"><label for="p2">$4.99</label></div>
+              <div class="pill"><input type="radio" name="price" id="p3" value="$9.99"><label for="p3">$9.99</label></div>
+              <div class="pill"><input type="radio" name="price" id="p4" value="only if free"><label for="p4">Only if free</label></div>
+            </div>
+          </fieldset>
+
+          <div class="hp" aria-hidden="true">
+            <label for="website">Leave this empty</label>
+            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+
+          <div class="submit-row">
+            <p class="form-error" id="formError" role="alert" hidden></p>
+            <button class="btn" type="submit" id="submitBtn">Join the beta</button>
+            <p class="fine">We email you only about this app: the beta invite or the launch offer. We keep your email, watch, answers, time zone and how you found this page. Reply to any of our emails to have them deleted.</p>
+          </div>
+        </form>
+
+        <div class="done" id="signupDone" role="status" hidden tabindex="-1">
+          <h3 id="doneTitle">You're on the list</h3>
+          <p id="doneText"></p>
+          <p>Know someone who sits all day? Send them this link:</p>
+          <div class="share">
+            <code id="shareLink"></code>
+            <button class="btn-ghost" type="button" id="copyBtn">Copy link</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="faq-h">
+    <div class="wrap">
+      <div class="section-head"><h2 id="faq-h">Questions</h2></div>
+      <div class="faq">
+        <details>
+          <summary>Which watches does it work on?</summary>
+          <p>Wear OS 3 or newer with a step sensor: Galaxy Watch4 and every Galaxy Watch since, every Pixel Watch, and other Wear OS watches. It doesn't run on Apple Watch, Fitbit Versa, Sense, Charge or Inspire, or Garmin.</p>
+        </details>
+        <details>
+          <summary>What does a beta tester do?</summary>
+          <p>When testing opens, you get an email with a link to install the test build from Google Play. Use the same Google account you signed up with, keep the app installed for at least two weeks, and tell us when a reminder comes when it shouldn't, or doesn't come when it should.</p>
+        </details>
+        <details>
+          <summary>What does lifetime access mean?</summary>
+          <p>You pay once, or nothing as a beta tester, and get every future version of the app with no subscription.</p>
+        </details>
+        <details>
+          <summary>Does it send my steps anywhere?</summary>
+          <p>No. The app counts and stores your steps on the watch. It has no account and no server, and it doesn't use the internet.</p>
+        </details>
+        <details>
+          <summary>Do I need to change my watch face?</summary>
+          <p>No. Add the hourly steps complication to any watch face slot that accepts one: long-press the watch face, tap Customize, pick a slot, then choose Hourly Steps.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Get Up and Walk Reminder is an independent app and isn't affiliated with Google, Fitbit or Samsung. Wear OS, Pixel Watch, Fitbit and Galaxy Watch are trademarks of their owners.</p>
+  </div>
+</footer>
+
+<script>
+const CONFIG = {
+  // Google Apps Script web app URL, ending in /exec. See landing/README.md.
+  signupEndpoint: "",
+  // Founding lifetime price shown to the waitlist.
+  foundingPrice: "$4.99",
+};
+
+document.querySelectorAll("[data-price]").forEach(el => { el.textContent = CONFIG.foundingPrice; });
+if (!CONFIG.signupEndpoint) document.getElementById("devnote").hidden = false;
+
+/* Live watch demo: 10:38 → buzz at 10:50 → goal at 10:56, on a 15-second loop. */
+(function watchDemo() {
+  const $ = id => document.getElementById(id);
+  const body = $("watchBody"), ring = $("wRing"), steps = $("wSteps"), time = $("wTime"),
+        pill = $("wPill"), pillText = $("wPillText"), heart = $("wHeart"), marks = $("buzzMarks");
+  if (!body || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const GOAL = 250, LOOP = 15000;
+  const clamp = t => Math.min(1, Math.max(0, t));
+  const ease = t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+  const lerp = (a, b, t) => a + (b - a) * clamp(t);
+
+  function stateAt(t) {
+    if (t < 4800) {
+      const p = t / 4800;
+      return { minute: Math.floor(lerp(38, 49.99, p)), steps: Math.round(lerp(150, 182, ease(clamp(p * 1.6)))), alert: false, buzz: false };
+    }
+    if (t < 6900) return { minute: 50, steps: 182, alert: true, buzz: t < 6300 };
+    if (t < 10400) {
+      const p = (t - 6900) / 3500;
+      const s = Math.round(lerp(182, GOAL, ease(p)));
+      return { minute: Math.floor(lerp(51, 56.99, p)), steps: s, alert: s < GOAL, buzz: false };
+    }
+    return { minute: t < 12800 ? 56 : 57, steps: GOAL, alert: false, buzz: false };
+  }
+
+  // Same states and colours as the app's status pill; the pill is sized to its text
+  function setPill(s) {
+    const left = GOAL - s.steps;
+    const [label, bg, fg] = s.steps >= GOAL ? ["Hour won · 4 of 5", "var(--face-heart)", "var(--face-on-heart)"]
+      : s.alert ? ["Move! " + left + " to go", "var(--face-heart)", "var(--face-on-heart)"]
+      : [left + " to go", "var(--face-surface)", "var(--face-ring)"];
+    pillText.textContent = label;
+    pillText.setAttribute("fill", fg);
+    pill.setAttribute("fill", bg);
+    const w = Math.max(96, pillText.getComputedTextLength() + 28);
+    pill.setAttribute("x", 160 - w / 2);
+    pill.setAttribute("width", w);
+  }
+
+  let last = {}, start = null, raf = 0, visible = true;
+  function render(s) {
+    if (s.steps !== last.steps) {
+      steps.textContent = s.steps;
+      ring.setAttribute("stroke-dasharray", s.steps + " 1000");
+      heart.classList.toggle("off", s.steps < GOAL);
+    }
+    if (s.minute !== last.minute) time.textContent = "10:" + String(s.minute).padStart(2, "0");
+    if (s.steps !== last.steps || s.alert !== last.alert) setPill(s);
+    if (s.buzz !== last.buzz) {
+      body.classList.toggle("buzz", s.buzz);
+      marks.classList.toggle("on", s.buzz);
+    }
+    last = s;
+  }
+  function tick(now) {
+    if (start === null) start = now;
+    render(stateAt((now - start) % LOOP));
+    raf = visible ? requestAnimationFrame(tick) : 0;
+  }
+  // Start from the at-rest frame for a moment, then run while the watch is on screen.
+  setTimeout(() => {
+    marks.classList.remove("on");
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(entries => {
+        visible = entries[0].isIntersecting;
+        if (visible && !raf) raf = requestAnimationFrame(tick);
+      }).observe(body);
+    } else {
+      raf = requestAnimationFrame(tick);
+    }
+  }, 1600);
+})();
+
+/* Signup form */
+(function signup() {
+  const $ = id => document.getElementById(id);
+  const form = $("signupForm"), done = $("signupDone"), err = $("formError"), btn = $("submitBtn"),
+        watch = $("watch"), beta = $("track-beta"), wait = $("track-wait"), watchNote = $("watchNote");
+
+  const params = new URLSearchParams(location.search);
+  let ref = params.get("ref") || params.get("utm_source") || "";
+  if (!ref && document.referrer) { try { ref = new URL(document.referrer).hostname; } catch (_) {} }
+  ref = (ref || "direct").slice(0, 60);
+
+  // Set when picking a non-Wear OS watch moved the person off Beta, so fixing the watch moves them back
+  let movedOffBeta = false;
+  function sync() {
+    const opt = watch.selectedOptions[0];
+    const notWear = !!opt && opt.dataset.wear === "0";
+    beta.disabled = notWear;
+    if (notWear && beta.checked) { wait.checked = true; movedOffBeta = true; }
+    if (!notWear && movedOffBeta) { beta.checked = true; movedOffBeta = false; }
+    watchNote.hidden = !notWear;
+    if (!btn.disabled) btn.textContent = beta.checked ? "Join the beta" : "Join the waitlist";
+  }
+  form.addEventListener("change", e => {
+    if (e.target.name === "track") movedOffBeta = false; // their own choice: keep it
+    sync();
+  });
+
+  function showDone(p, duplicate) {
+    $("doneTitle").textContent = duplicate ? "You're already on the list" : "You're on the list";
+    $("doneText").textContent = duplicate
+      ? "We've updated your answers for " + p.email + ". Nothing else to do."
+      : p.track === "beta"
+        ? "We'll email " + p.email + " with the Google Play testing link. Open it while signed in to that same Google account."
+        : "We'll email " + p.email + " once, at launch, with the " + CONFIG.foundingPrice + " lifetime offer.";
+    $("shareLink").textContent = location.origin + location.pathname + "?ref=friend";
+    form.hidden = true;
+    done.hidden = false;
+    done.focus();
+  }
+
+  $("copyBtn").addEventListener("click", () => {
+    const text = $("shareLink").textContent, b = $("copyBtn");
+    const selectIt = () => { const r = document.createRange(); r.selectNodeContents($("shareLink")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => { b.textContent = "Copied"; }, selectIt);
+    } else selectIt();
+  });
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    err.hidden = true;
+    const email = $("email");
+    email.value = email.value.trim();
+    if (!form.reportValidity()) return;
+
+    const fd = new FormData(form);
+    const payload = {
+      email: email.value,
+      track: fd.get("track") || "waitlist",
+      watch: fd.get("watch") || "",
+      price: fd.get("price") || "",
+      ref,
+      tz: (Intl.DateTimeFormat().resolvedOptions().timeZone || "").slice(0, 60),
+      page: location.pathname,
+      website: fd.get("website") || "",
+    };
+
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    try {
+      let result;
+      if (!CONFIG.signupEndpoint) {
+        console.info("Preview mode, not saved:", payload);
+        await new Promise(r => setTimeout(r, 500));
+        result = { ok: true };
+      } else {
+        const res = await fetch(CONFIG.signupEndpoint, { method: "POST", body: new URLSearchParams(payload) });
+        result = await res.json();
+      }
+      if (!result || !result.ok) throw new Error((result && result.error) || "save_failed");
+      showDone(payload, !!result.duplicate);
+    } catch (x) {
+      err.textContent = x.message === "invalid_email"
+        ? "That email address doesn't look right. Check it and try again."
+        : "We couldn't save your signup. Check your connection and try again.";
+      err.hidden = false;
+    } finally {
+      btn.disabled = false;
+      sync();
+    }
+  });
+
+  sync();
+})();
+</script>
+</body>
+</html>
