@@ -8,6 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Get Up and Walk Reminder">
 <meta property="og:description" content="Walk 250 steps every hour. The count sits on your Wear OS watch face, and the watch buzzes at :50 if you're short. Beta testers get lifetime access free.">
+<link rel="canonical" href="https://puru2901is.github.io/get-up-and-walk/">
 <meta property="og:url" content="https://puru2901is.github.io/get-up-and-walk/">
 <!-- Full URL on purpose: some sites ignore a relative preview image -->
 <meta property="og:image" content="https://puru2901is.github.io/get-up-and-walk/og.png">
@@ -513,7 +514,7 @@ footer p { max-width: 60em; }
           </div>
 
           <fieldset>
-            <legend>What would you pay once for lifetime access? <span class="optional">(optional)</span></legend>
+            <legend>What would you pay once for lifetime access? <span class="optional">(optional, tap again to clear)</span></legend>
             <div class="pills">
               <div class="pill"><input type="radio" name="price" id="p1" value="$2.99"><label for="p1">$2.99</label></div>
               <div class="pill"><input type="radio" name="price" id="p2" value="$4.99"><label for="p2">$4.99</label></div>
@@ -689,6 +690,18 @@ if (!CONFIG.signupEndpoint) document.getElementById("devnote").hidden = false;
     watchNote.hidden = !notWear;
     if (!btn.disabled) btn.textContent = beta.checked ? "Join the beta" : "Join the waitlist";
   }
+  // The price question is optional, so tapping the chosen price again clears it
+  let lastPrice = null;
+  form.querySelectorAll('input[name="price"]').forEach(r => {
+    r.addEventListener("click", () => {
+      if (lastPrice === r) { r.checked = false; lastPrice = null; } else lastPrice = r;
+    });
+    // Keyboard: Space on the chosen price clears it (browsers send no click for an already chosen option)
+    r.addEventListener("keydown", e => {
+      if (e.key === " " && r.checked) { e.preventDefault(); r.checked = false; lastPrice = null; }
+    });
+  });
+
   form.addEventListener("change", e => {
     if (e.target.name === "track") movedOffBeta = false; // their own choice: keep it
     sync();
